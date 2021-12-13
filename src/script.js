@@ -2,8 +2,9 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "lil-gui";
-import CANNON, { Material } from "cannon";
+//import CANNON, { Material } from "cannon";
 import { SphereGeometry } from "three";
+import * as CANNON from 'cannon-es'
 
 /**
  * Debug
@@ -19,7 +20,7 @@ debugObject.createSphere = () => {
   });
 };
 
-// gui.add(debugObject, "createSphere");
+ gui.add(debugObject, "createSphere");
 
 /**
  * Base
@@ -74,7 +75,7 @@ world.defaultContactMaterial = defaultContactMaterial;
 const hitSound = new Audio("/sounds/hit.mp3");
 
 const playHitSound = (collision) => {
-  const impactStrength = collision.conatact.getImpactVelocityAlongNormal();
+  const impactStrength = collision.contact.getImpactVelocityAlongNormal()
 
   if (impactStrength > 1.5) {
     hitSound.currentTime = 0;
@@ -184,37 +185,38 @@ const objectsToUpdate = [];
 /**
  * Create Sphere
  */
-// const sphereGeometry = new THREE.SphereGeometry(1, 20, 20)
-// const sphereMaterial = new THREE.MeshStandardMaterial({
-//   metalness: 0.3,
-//   roughness: 0.4,
-//   envMap: environmentMapTexture,
-//   envMapIntensity: 0.5,
-// })
+const sphereGeometry = new THREE.SphereGeometry(1, 20, 20)
+const sphereMaterial = new THREE.MeshStandardMaterial({
+  metalness: 0.3,
+  roughness: 0.4,
+  envMap: environmentMapTexture,
+  envMapIntensity: 0.5,
+})
 
-// const createSphere = (radius, position) => {
-//   // Three.js mesh
-//   const mesh = new THREE.Mesh(sphereGeometry,sphereMaterial);
-//   mesh.castShadow = true;
-//   mesh.scale.set(radius, radius ,radius)
-//   mesh.position.copy(position);
-//   scene.add(mesh);
+const createSphere = (radius, position) => {
+  // Three.js mesh
+  const mesh = new THREE.Mesh(sphereGeometry,sphereMaterial);
+  mesh.castShadow = true;
+  mesh.scale.set(radius, radius ,radius)
+  mesh.position.copy(position);
+  scene.add(mesh);
 
-//   // Cannon.js body
-//   const shape = new CANNON.Sphere(radius);
+  // Cannon.js body
+  const shape = new CANNON.Sphere(radius);
 
-//   const body = new CANNON.Body({
-//     mass: 1,
-//     position: new CANNON.Vec3(0, 3, 0),
-//     shape: shape,
-//     material: defaultMaterial,
-//   });
-//   body.position.copy(position);
-//   world.addBody(body);
+  const body = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(0, 3, 0),
+    shape: shape,
+    material: defaultMaterial,
+  });
+  body.position.copy(position);
+  world.addBody(body);
 
-//   objectsToUpdate.push({ mesh, body }); //array of objects
-// };
-// createSphere(0.5, { x: 0, y: 3, z: 0 });
+  body.addEventListener("collide", playHitSound);
+  objectsToUpdate.push({ mesh, body }); //array of objects
+};
+createSphere(0.5, { x: 0, y: 3, z: 0 });
 
 // Create box
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -262,6 +264,30 @@ debugObject.createBox = () => {
   });
 };
 gui.add(debugObject, "createBox");
+
+// /**
+//  * Physijs
+//  */
+//  box = new Physijs.BoxMesh(
+//   new THREE.CubeGeometry(5, 5, 5),
+//   new THREE.MeshBasicMaterial({ color: 0x888888 })
+// )
+// scene.add(box)
+
+// Reset
+debugObject.reset = () =>
+{
+    for(const object of objectsToUpdate)
+    {
+        // Remove body
+        object.body.removeEventListener('collide', playHitSound)
+        world.removeBody(object.body)
+
+        // Remove mesh
+        scene.remove(object.mesh)
+    }
+}
+gui.add(debugObject,'reset')
 
 /**
  * Animate
